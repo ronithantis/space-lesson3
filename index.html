@@ -696,7 +696,7 @@ function renderMedia(s){
   $('#layers').classList.toggle('passthru', !!s.bgInteractive);
   if (s.bgAnim){
     const a = document.createElement('iframe'); a.id = 'bgvid'; a.title = ''; a.setAttribute('aria-hidden','true'); a.setAttribute('tabindex','-1'); a.style.border = '0';
-    a.addEventListener('load', () => a.classList.add('on'), {once:true}); a.src = s.bgAnim; if (s.bgInteractive) a.style.pointerEvents = 'auto'; a.addEventListener('load', () => { try { a.contentWindow.postMessage({type:'step', n:reveal}, '*'); } catch(e){} }, {once:true}); $('#shade').before(a);
+    a.addEventListener('load', () => { try { const d = a.contentDocument; if (d && (/404|not found/i.test(d.title) || !d.querySelector('script'))) return; } catch(e){} a.classList.add('on'); }, {once:true}); a.src = s.bgAnim; if (s.bgInteractive) a.style.pointerEvents = 'auto'; a.addEventListener('load', () => { try { const d = a.contentDocument; if (d && (/404|not found/i.test(d.title) || !d.querySelector('script'))) { a.remove(); return; } a.contentWindow.postMessage({type:'step', n:reveal}, '*'); } catch(e){} }, {once:true}); $('#shade').before(a);
   }
   if (s.bgVideo){
     const v = document.createElement('video'); v.id = 'bgvid'; v.muted = true; v.loop = !s.opening; v.playsInline = true; v.autoplay = !s.opening;
