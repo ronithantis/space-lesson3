@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>תשבץ – לכל משימה הכלי שלה</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+
+:root{
+  --void:#02040a; --ink:#e9eef6; --muted:#97a4ba; --line:rgba(190,210,240,.15);
+  --glass:rgba(6,12,26,.6); --gold:#d8b46a; --gold-soft:rgba(216,180,106,.13);
+  --miss:#e8917e; --miss-soft:rgba(232,145,126,.11); --cap:24vh;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --void:#02040a; --ink:#e9eef6; --muted:#97a4ba; }
+}
+:root[data-theme="dark"]{ --void:#02040a; --ink:#e9eef6; --muted:#97a4ba; }
+:root{ box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+*,*::before,*::after{ box-sizing:inherit; }
+html{ height:100%; scroll-padding-top:env(safe-area-inset-top,0px); background:var(--void); }
+body{
+  margin:0; min-height:100%; background:var(--void); color:var(--ink);
+  font-family:"Heebo",system-ui,"Segoe UI",Arial,sans-serif; font-weight:400; line-height:1.6;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+
+/* ---------- Scene ---------- */
+.scene{ position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
+#stars{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+.planet{
+  position:absolute; left:50%; top:calc(100% - var(--cap));
+  width:max(1800px,230vmax); aspect-ratio:1/1; transform:translateX(-50%);
+}
+.sun{
+  position:absolute; left:66%; top:2.05%; width:620px; height:620px;
+  transform:translate(-50%,-50%); border-radius:50%;
+  background:radial-gradient(circle, #fff 0, #fffaf0 1.2%, rgba(255,230,190,.85) 2.6%, rgba(255,196,120,.32) 9%, rgba(255,170,90,.1) 22%, transparent 50%);
+}
+.surface{
+  position:absolute; inset:0; border-radius:50%; overflow:hidden;
+  background:
+    radial-gradient(42% 7% at 66% 0%, #4b92cf 0%, #21679e 28%, #0f3b63 58%, transparent 100%),
+    #061a30;
+}
+.clouds{
+  position:absolute; top:0; left:0; width:200%; height:9%;
+  background-repeat:repeat-x; background-size:50% 100%; opacity:0;
+  transition:opacity 2.4s ease; animation:spin 900s linear infinite;
+}
+.clouds.ready{ opacity:1; }
+@keyframes spin{ to{ transform:translateX(-50%); } }
+.night{
+  position:absolute; inset:0; border-radius:50%;
+  background:linear-gradient(to left, transparent 52%, rgba(1,4,12,.55) 70%, rgba(1,3,8,.9) 88%);
+}
+.limb{
+  position:absolute; inset:0; border-radius:50%;
+  background:radial-gradient(circle, transparent 48.7%, rgba(0,4,14,.5) 50%);
+}
+.atmo, .rim{ position:absolute; inset:-1.2%; border-radius:50%; }
+.atmo{
+  background:radial-gradient(circle, transparent 48.55%, rgba(120,195,255,.6) 48.86%, rgba(80,150,255,.2) 49.3%, rgba(60,120,255,.06) 49.85%, transparent 50.4%);
+}
+.rim{
+  background:radial-gradient(circle, transparent 48.6%, rgba(255,226,180,.85) 48.84%, rgba(255,190,120,.25) 49.2%, transparent 49.9%);
+  -webkit-mask-image:linear-gradient(to right, transparent 50%, #000 63%, #000 70%, transparent 82%);
+          mask-image:linear-gradient(to right, transparent 50%, #000 63%, #000 70%, transparent 82%);
+}
+.flare{
+  position:absolute; left:66%; top:1.85%; width:1100px; height:1100px; transform:translate(-50%,-50%);
+  background:radial-gradient(circle, rgba(255,235,205,.35) 0, rgba(255,200,140,.08) 18%, transparent 45%);
+  mix-blend-mode:screen;
+}
+.streak{
+  position:absolute; left:66%; top:1.85%; width:150vw; height:2px; transform:translate(-50%,-50%);
+  background:linear-gradient(to right, transparent, rgba(255,214,160,.08) 25%, rgba(255,236,210,.55) 50%, rgba(255,214,160,.08) 75%, transparent);
+  filter:blur(.6px); mix-blend-mode:screen;
+}
+.vignette{
+  position:absolute; inset:0;
+  background:radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(0,0,0,.55) 100%);
+}
+
+.app{ position:relative; z-index:1; min-height:100%; display:flex; flex-direction:column; }
+.bar{ display:flex; justify-content:space-between; align-items:baseline; padding:18px clamp(18px,4vw,44px) 0; color:var(--muted); font-size:.95rem; }
+.course{ font-weight:500; color:var(--ink); }
+.stats{ display:flex; gap:18px; font-weight:500; }
+#score{ color:var(--gold); }
+#clock{ font-variant-numeric:tabular-nums; color:var(--ink); min-width:3.2em; text-align:left; }
+.stage{ flex:1; width:min(1160px,100%); margin:0 auto; padding:clamp(12px,2.4vh,24px) clamp(16px,3vw,36px) calc(var(--cap) * .5); }
+.intro{ margin-bottom:clamp(12px,2vh,20px); }
+h1{ margin:0 0 6px; font-weight:700; font-size:clamp(1.6rem,3.4vw,2.4rem); line-height:1.15; text-shadow:0 2px 20px rgba(0,0,0,.5); }
+.lede{ margin:0; color:#c3cddd; font-weight:300; font-size:clamp(.95rem,1.6vw,1.05rem); max-width:78ch; }
+
+.layout{ display:grid; grid-template-columns:auto minmax(280px,380px); gap:clamp(18px,3vw,34px); align-items:start; justify-content:center; }
+.board-col{ display:flex; flex-direction:column; align-items:center; gap:12px; }
+.board-wrap{ background:var(--glass); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); border:1px solid var(--line); border-radius:16px; padding:clamp(10px,1.5vw,16px); box-shadow:0 30px 80px rgba(0,0,0,.45); }
+.board{ --cell:clamp(30px, min(5.4vw, 5.6vh), 52px); display:grid; gap:3px; }
+.cell{ position:relative; width:var(--cell); height:var(--cell); }
+.cell.void{ visibility:hidden; }
+.cell input{
+  width:100%; height:100%; box-sizing:border-box; text-align:center; padding:0; margin:0;
+  font:inherit; font-weight:700; font-size:calc(var(--cell) * .5); color:var(--ink);
+  background:rgba(255,255,255,.06); border:1px solid rgba(190,210,240,.22); border-radius:6px;
+  caret-color:transparent; outline:none; cursor:pointer; transition:background-color .15s, border-color .15s;
+}
+.cell .num{ position:absolute; top:2px; right:4px; font-size:calc(var(--cell) * .24); line-height:1; color:var(--muted); pointer-events:none; font-weight:500; }
+.cell.inword input{ background:rgba(216,180,106,.1); border-color:rgba(216,180,106,.35); }
+.cell.cur input{ border-color:var(--gold); box-shadow:0 0 0 1px var(--gold); }
+.cell.wrong input{ color:var(--miss); border-color:rgba(232,145,126,.7); }
+.cell.wordwrong input{ color:var(--miss); border-color:var(--miss); background:rgba(232,145,126,.1); animation:shake .4s ease; }
+@keyframes shake{ 0%,100%{ transform:none; } 20%{ transform:translateX(-4px); } 40%{ transform:translateX(4px); } 60%{ transform:translateX(-3px); } 80%{ transform:translateX(2px); } }
+.cell.given input{ color:#e9d3a0; }
+.cell.solved input{ color:var(--gold); background:rgba(216,180,106,.14); border-color:rgba(216,180,106,.55); cursor:default; }
+.cell.solved .num{ color:rgba(216,180,106,.8); }
+
+.active-clue{ margin:2px 0 0; min-height:1.6em; text-align:center; color:#d6deea; font-size:1.02rem; max-width:560px; }
+.active-clue b{ color:var(--gold); font-weight:600; }
+.tools{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+
+.kb{ display:grid; gap:6px; background:var(--glass); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); border:1px solid var(--line); border-radius:14px; padding:10px; }
+.kb[hidden]{ display:none; }
+.kb-row{ display:flex; gap:5px; justify-content:center; }
+.kb button{ font:inherit; font-size:1.05rem; font-weight:500; min-width:36px; height:42px; padding:0 6px; border-radius:8px; border:1px solid var(--line); background:rgba(255,255,255,.06); color:var(--ink); cursor:pointer; }
+.kb button:hover{ border-color:rgba(216,180,106,.5); }
+.kb button.wide{ min-width:72px; font-size:.9rem; }
+
+.side{ background:var(--glass); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); border:1px solid var(--line); border-radius:16px; padding:16px 20px; max-height:calc(100vh - 200px); overflow:auto; }
+.tabs{ display:flex; gap:4px; padding:3px; margin-bottom:12px; border:1px solid var(--line); border-radius:999px; }
+.tabs button{ flex:1; font:inherit; font-size:1rem; font-weight:500; color:var(--muted); background:none; border:0; border-radius:999px; padding:7px 0; cursor:pointer; transition:background-color .2s, color .2s; }
+.tabs button[aria-selected="true"]{ background:rgba(216,180,106,.16); color:var(--gold); font-weight:700; }
+.tabs button:focus-visible{ outline:2px solid var(--gold); outline-offset:1px; }
+.clues[hidden]{ display:none; }
+.clues{ list-style:none; margin:0; padding:0; }
+.clues li{ display:grid; grid-template-columns:1.8em 1fr; gap:4px; padding:6px 8px; margin:0 -8px; border-radius:8px; font-size:.95rem; line-height:1.45; color:#cfd8e6; cursor:pointer; }
+.clues li:hover{ background:rgba(255,255,255,.05); }
+.clues li.on{ background:rgba(216,180,106,.12); color:var(--ink); }
+.clues li.done{ color:var(--muted); }
+.clues li .n{ font-weight:600; color:var(--muted); }
+.clues li.done .n{ color:var(--gold); }
+.clues li .len{ color:var(--muted); font-size:.85rem; }
+
+.btn{ font:inherit; font-weight:500; font-size:.98rem; cursor:pointer; padding:10px 24px; border-radius:999px; border:1px solid var(--gold); background:var(--gold); color:#1b1407; transition:background-color .2s; }
+.btn:hover{ background:#e4c27c; }
+.btn.ghost{ background:transparent; color:var(--ink); border-color:var(--line); }
+.btn.ghost:hover{ border-color:var(--gold); }
+.btn:disabled{ opacity:.35; cursor:default; }
+.btn:focus-visible, .kb button:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
+
+.overlay{ position:fixed; inset:0; z-index:20; background:rgba(1,4,12,.55); display:flex; align-items:center; justify-content:center; padding:20px; }
+.overlay[hidden]{ display:none; }
+.card{ width:min(440px,100%); background:rgba(8,15,30,.9); -webkit-backdrop-filter:blur(18px); backdrop-filter:blur(18px); border:1px solid var(--line); border-radius:18px; padding:clamp(22px,4vw,32px); box-shadow:0 40px 90px rgba(0,0,0,.6); animation:pop .35s cubic-bezier(.2,.7,.2,1) both; }
+.card.wide{ width:min(520px,100%); }
+@keyframes pop{ from{ opacity:0; transform:translateY(10px) scale(.98); } to{ opacity:1; transform:none; } }
+.tag{ margin:0 0 6px; color:var(--gold); font-weight:500; font-size:.95rem; }
+.card h3{ margin:0 0 10px; font-weight:700; font-size:clamp(1.5rem,3.8vw,2rem); line-height:1.25; }
+.exp{ margin:0 0 22px; color:#d6deea; font-size:1.04rem; line-height:1.65; }
+.endstats{ display:flex; gap:28px; margin:8px 0 16px; }
+.endstats div{ display:flex; flex-direction:column; }
+.endstats b{ font-size:clamp(2.4rem,7vw,3.2rem); line-height:1; color:var(--gold); font-weight:700; font-variant-numeric:tabular-nums; }
+.endstats span{ color:var(--muted); font-size:.95rem; margin-top:4px; }
+.row{ display:flex; gap:10px; flex-wrap:wrap; }
+
+@media (max-width:900px){
+  .layout{ grid-template-columns:1fr; }
+  .board{ --cell:clamp(26px, calc((100vw - 90px) / 10 - 3px), 48px); }
+  .side{ max-height:none; }
+}
+
+@media (prefers-reduced-motion: reduce){ *, *::before, *::after{ animation:none !important; transition:none !important; } .clouds{ opacity:1; } }
+</style>
+</head>
+<body>
+<div class="scene" aria-hidden="true">
+  <canvas id="stars"></canvas>
+  <div class="planet">
+    <div class="sun"></div>
+    <div class="surface">
+      <div class="clouds" id="clouds"></div>
+      <div class="night"></div>
+      <div class="limb"></div>
+    </div>
+    <div class="atmo"></div>
+    <div class="rim"></div>
+    <div class="flare"></div>
+    <div class="streak"></div>
+  </div>
+  <div class="vignette"></div>
+</div>
+
+<div class="app">
+  <header class="bar">
+    <span class="course">קורס החלל – חזרה על שיעור 2</span>
+    <span class="stats"><span id="score">ניקוד: 0</span><span id="clock">00:00</span></span>
+  </header>
+  <main class="stage">
+    <div class="intro">
+      <h1>תשבץ: לכל משימה הכלי שלה</h1>
+      <p class="lede">לחצו על משבצת או על הגדרה, והקלידו את התשובה. מילה בלי רמזים שווה 10 נקודות, אחרי רמז אחד 7, אחרי שני רמזים 4, ומילה שנחשפה 0.</p>
+    </div>
+    <div class="layout">
+      <div class="board-col">
+        <div class="board-wrap">
+          <div class="board" id="board" dir="ltr"></div>
+        </div>
+        <p class="active-clue" id="activeClue" aria-live="polite"></p>
+        <div class="tools">
+          <button class="btn" id="hint" type="button">רמז</button>
+          <button class="btn ghost" id="check" type="button">בדיקה</button>
+          <button class="btn ghost" id="kbToggle" type="button">מקלדת על המסך</button>
+        </div>
+        <div class="kb" id="kb" hidden></div>
+      </div>
+      <aside class="side">
+        <div class="tabs" role="tablist">
+          <button type="button" role="tab" id="tabA" data-d="A" aria-selected="true">מאוזן</button>
+          <button type="button" role="tab" id="tabD" data-d="D" aria-selected="false">מאונך</button>
+        </div>
+        <ol class="clues" id="cluesA" role="tabpanel" aria-labelledby="tabA"></ol>
+        <ol class="clues" id="cluesD" role="tabpanel" aria-labelledby="tabD" hidden></ol>
+      </aside>
+    </div>
+  </main>
+</div>
+
+<div class="overlay" id="pop" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="popWord">
+    <p class="tag" id="popTag"></p>
+    <h3 id="popWord"></h3>
+    <p class="exp" id="popText"></p>
+    <button class="btn" id="popClose" type="button">המשך</button>
+  </div>
+</div>
+
+<div class="overlay" id="end" hidden>
+  <div class="card wide" role="dialog" aria-modal="true" aria-labelledby="endTitle">
+    <p class="tag">התשבץ הושלם</p>
+    <h3 id="endTitle">לא מתחילים בלוויין. מתחילים בשאלה.</h3>
+    <div class="endstats">
+      <div><b id="endScore">0</b><span>נקודות מתוך 120</span></div>
+      <div><b id="endTime">00:00</b><span>זמן</span></div>
+    </div>
+    <p class="exp" id="endBreak"></p>
+    <div class="row">
+      <button class="btn" id="endClose" type="button">צפייה בתשבץ</button>
+      <button class="btn ghost" id="again" type="button">משחק חוזר</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATA = {"w": 10, "h": 10, "words": [{"w": "תקשורת", "x": 2, "y": 3, "d": "A", "clue": "סוג המשימה של לוויין שמביא אינטרנט וטלוויזיה לכפר מרוחק.", "exp": "לוויין תקשורת קולט אותות מתחנה על הקרקע ומשדר אותם הלאה, לאזור גדול מאוד."}, {"w": "אילוץ", "x": 5, "y": 0, "d": "D", "clue": "מגבלה שיוצרת דילמה בתכנון, כמו \"התקציב קטן מאוד\".", "exp": "גם מהנדסי חלל אמיתיים מתכננים תחת אילוצים, כמו תקציב, משקל, גודל ומיקום."}, {"w": "ניווט", "x": 4, "y": 1, "d": "A", "clue": "סוג משימה: הטלפון מחשב את המיקום שלנו לפי אותות מלפחות ארבעה לוויינים.", "exp": "לווייני ניווט לא מצלמים. הם משדרים אות עם הזמן והמיקום שלהם, והטלפון מחשב מהאותות איפה אנחנו."}, {"w": "תכנון", "x": 7, "y": 3, "d": "D", "clue": "המשימה קובעת את ה...: איזה מידע, איזה מכשיר ואיפה למקם.", "exp": "שרשרת התכנון היא שאלה, מידע, מכשיר, מיקום. כך מתכננים מערכת חלל שמתאימה למשימה."}, {"w": "חיישן", "x": 3, "y": 7, "d": "A", "clue": "המכשיר שקולט את מה שצריך למדוד, גם מה שהעין לא רואה.", "exp": "החיישן של ונוס קולט 12 ערוצים של אור, גם באינפרה־אדום. כך אפשר לזהות הבדלים בצמחייה שהעין לא רואה."}, {"w": "ונוס", "x": 6, "y": 5, "d": "A", "clue": "לוויין ישראלי־צרפתי עם מצלמה של 12 ערוצים.", "exp": "השילוב של אור נראה ואינפרה־אדום עוזר לזהות הבדלים במצב הצמחייה, ולחקור שינויים שלא תמיד נראים לעין."}, {"w": "תבל", "x": 2, "y": 3, "d": "D", "clue": "תשעה ננו־לוויינים שבנו תלמידי תיכון בישראל.", "exp": "כל לוויין בגודל של כ-10 על 10 על 11.3 ס\"מ. אחד מהם הוא הלוויין הדרוזי הראשון, שבנו תלמידים מירכא."}, {"w": "ווב", "x": 0, "y": 4, "d": "A", "clue": "טלסקופ חלל שמקיף את השמש ורואה אור אינפרה־אדום.", "exp": "המראה של ג'יימס ווב בקוטר של כ-6.5 מטר, והיא נפתחה בחלל כמו אוריגמי. בזכות האינפרה־אדום הוא רואה דרך ענני אבק."}, {"w": "משימה", "x": 4, "y": 5, "d": "D", "clue": "לכל ... הכלי שלה.", "exp": "אין \"לוויין טוב\" באופן כללי. יש לוויין שמתאים למשימה, ולוויין אחד יכול גם לבצע כמה משימות."}, {"w": "מיקום", "x": 0, "y": 1, "d": "D", "clue": "השלב האחרון בשרשרת התכנון: איפה למקם את המערכת?", "exp": "המיקום תלוי במשימה: לוויין תקשורת נמצא בגובה של כ-36,000 ק\"מ, וטלסקופ ווב נמצא כ-1.5 מיליון ק\"מ מאיתנו."}, {"w": "האבל", "x": 4, "y": 9, "d": "A", "clue": "טלסקופ חלל בגובה של כ-500 ק\"מ, שרואה את היקום חד כי הוא מעל האטמוספרה.", "exp": "האטמוספרה מטשטשת את האור שמגיע מהחלל. מעליה, האבל מצלם את היקום בחדות רבה."}, {"w": "עמוס", "x": 9, "y": 2, "d": "D", "clue": "לוויין ישראלי בגובה של כ-36,000 ק\"מ, שנשאר כל הזמן מעל אותו אזור.", "exp": "בגובה הזה הלוויין מקיף את כדור הארץ באותו קצב שבו כדור הארץ מסתובב, ולכן הוא נשאר מעל אותו אזור."}]};
+const $ = id => document.getElementById(id);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FIN = { 'ך':'כ','ם':'מ','ן':'נ','ף':'פ','ץ':'צ' };
+const norm = c => FIN[c] || c;
+const isHeb = c => /[\u05D0-\u05EA]/.test(c);
+const GW = DATA.w, GH = DATA.h;
+const key = (x,y) => x + ',' + y;
+let cells, words, cur, curIdx, score, started, t0, tick, done;
+
+function setup(){
+  cells = {}; words = []; cur = null; curIdx = 0; score = 0; started = false; t0 = 0; done = false;
+  clearInterval(tick); $('clock').textContent = '00:00';
+  DATA.words.forEach((d,i) => {
+    const cs = [...d.w].map((ch,k) => d.d === 'A' ? [d.x+k, d.y] : [d.x, d.y+k]);
+    const wd = { id:i, w:d.w, d:d.d, cells:cs, clue:d.clue, exp:d.exp, hints:0, solved:false, pts:0 };
+    words.push(wd);
+    cs.forEach(([x,y],k) => {
+      const c = cells[key(x,y)] || (cells[key(x,y)] = { x, y, ch:[...d.w][k], val:'', words:[], given:false, solved:false });
+      c.words.push(i);
+    });
+  });
+  // numbering: top to bottom, right to left (logical x ascending)
+  const starts = [];
+  words.forEach(w => { const [x,y] = w.cells[0]; if (!starts.some(s => s.x === x && s.y === y)) starts.push({x,y}); });
+  starts.sort((a,b) => a.y - b.y || a.x - b.x);
+  starts.forEach((s,i) => cells[key(s.x,s.y)].num = i+1);
+  words.forEach(w => w.num = cells[key(...w.cells[0])].num);
+  buildBoard(); buildClues(); updateScore();
+  select(words.slice().sort((a,b) => a.num - b.num || (a.d === 'A' ? -1 : 1))[0].id, 0, false);
+}
+
+function buildBoard(){
+  const b = $('board'); b.innerHTML = '';
+  b.style.gridTemplateColumns = `repeat(${GW}, var(--cell))`;
+  for (let y = 0; y < GH; y++) for (let vx = 0; vx < GW; vx++){
+    const x = GW - 1 - vx, c = cells[key(x,y)];
+    const d = document.createElement('div');
+    d.className = 'cell' + (c ? '' : ' void');
+    if (c){
+      const inp = document.createElement('input');
+      inp.type = 'text'; inp.autocomplete = 'off'; inp.spellcheck = false; inp.setAttribute('autocapitalize','off');
+      inp.setAttribute('aria-label', `משבצת ${c.num ? c.num : ''}`.trim());
+      inp.addEventListener('mousedown', e => { e.preventDefault(); clickCell(c); });
+      inp.addEventListener('focus', () => { if (!cur || !cur.cells.some(([a,b]) => a === c.x && b === c.y)) clickCell(c); });
+      inp.addEventListener('input', () => { const v = [...inp.value].filter(isHeb).pop(); inp.value = c.val; if (v) typeChar(v); });
+      inp.addEventListener('keydown', onKey);
+      d.appendChild(inp); c.el = d; c.inp = inp;
+      if (c.num){ const n = document.createElement('span'); n.className = 'num'; n.textContent = c.num; d.appendChild(n); }
+    }
+    b.appendChild(d);
+  }
+  applyKbMode();
+}
+
+function buildClues(){
+  ['A','D'].forEach(dir => {
+    const ol = $(dir === 'A' ? 'cluesA' : 'cluesD'); ol.innerHTML = '';
+    words.filter(w => w.d === dir).sort((a,b) => a.num - b.num).forEach(w => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="n">${w.num}</span><span></span>`;
+      li.lastChild.textContent = `${w.clue} `;
+      const len = document.createElement('span'); len.className = 'len'; len.textContent = `(${[...w.w].length})`; li.lastChild.appendChild(len);
+      li.addEventListener('click', () => select(w.id, firstOpen(w), true));
+      w.li = li; ol.appendChild(li);
+    });
+  });
+}
+
+function firstOpen(w){ const i = w.cells.findIndex(([x,y]) => !locked(cells[key(x,y)]) && !cells[key(x,y)].val); return i < 0 ? 0 : i; }
+const locked = c => c.solved || c.given;
+
+function select(id, idx, focus){
+  cur = words[id]; curIdx = idx;
+  paint();
+  if (focus !== false) focusCell();
+}
+function curCell(){ const [x,y] = cur.cells[curIdx]; return cells[key(x,y)]; }
+function focusCell(){ const c = curCell(); c.inp.focus({preventScroll:true}); }
+
+function paint(){
+  Object.values(cells).forEach(c => {
+    c.el.classList.toggle('inword', !!cur && cur.cells.some(([x,y]) => x === c.x && y === c.y));
+    c.el.classList.remove('cur');
+    c.el.classList.toggle('solved', c.solved);
+    c.el.classList.toggle('given', c.given && !c.solved);
+    c.inp.value = c.val; c.inp.readOnly = locked(c);
+  });
+  if (cur) curCell().el.classList.add('cur');
+  words.forEach(w => { w.li.classList.toggle('on', w === cur); w.li.classList.toggle('done', w.solved); });
+  if (cur) showTab(cur.d, cur.li);
+  $('activeClue').innerHTML = cur ? `<b>${cur.num} ${cur.d === 'A' ? 'מאוזן' : 'מאונך'}</b> ` : '';
+  if (cur) $('activeClue').appendChild(document.createTextNode(cur.clue));
+  const h = $('hint');
+  h.disabled = !cur || cur.solved || done;
+  h.textContent = !cur || cur.hints === 0 ? 'רמז' : cur.hints === 1 ? 'רמז נוסף' : 'חשיפת המילה';
+}
+
+function clickCell(c){
+  const here = cur && cur.cells.findIndex(([x,y]) => x === c.x && y === c.y);
+  if (cur && here > -1 && here === curIdx && c.words.length > 1){
+    const other = c.words.find(i => i !== cur.id); const w = words[other];
+    select(other, w.cells.findIndex(([x,y]) => x === c.x && y === c.y));
+  } else if (cur && here > -1){ select(cur.id, here); }
+  else {
+    const pick = c.words.find(i => cur && words[i].d === cur.d) ?? c.words[0];
+    select(pick, words[pick].cells.findIndex(([x,y]) => x === c.x && y === c.y));
+  }
+}
+
+function startClock(){
+  if (started) return; started = true; t0 = Date.now();
+  tick = setInterval(() => { $('clock').textContent = fmt(Date.now() - t0); }, 500);
+}
+const fmt = ms => { const s = Math.floor(ms/1000); return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0'); };
+
+function typeChar(ch){
+  if (!cur || done) return;
+  startClock();
+  let c = curCell();
+  if (locked(c)){ advance(); c = curCell(); if (locked(c)) return; }
+  c.val = ch; c.el.classList.remove('wrong');
+  c.words.forEach(i => markWord(words[i], false));
+  const solvedNow = checkWords(c);
+  let bad = false;
+  if (!solvedNow){ bad = flagFull(c); advance(); }
+  paint(); if (!solvedNow) focusCell();
+  if (bad) $('activeClue').textContent = 'המילה לא נכונה. נסו שוב, או השתמשו ברמז.';
+}
+function markWord(w, on){
+  w.bad = on;
+  w.cells.forEach(([x,y]) => {
+    const cc = cells[key(x,y)];
+    const keep = cc.words.some(i => i !== w.id && words[i].bad);
+    cc.el.classList.toggle('wordwrong', on || keep);
+  });
+}
+function flagFull(c){
+  let any = false;
+  c.words.forEach(i => {
+    const w = words[i]; if (w.solved) return;
+    if (w.cells.every(([x,y]) => cells[key(x,y)].val)){ markWord(w, true); any = true; }
+  });
+  return any;
+}
+function advance(){
+  for (let k = curIdx + 1; k < cur.cells.length; k++){ if (!locked(cells[key(...cur.cells[k])])){ curIdx = k; return; } }
+}
+function checkWords(c){
+  let any = false;
+  c.words.forEach(i => {
+    const w = words[i]; if (w.solved) return;
+    const ok = w.cells.every(([x,y]) => { const cc = cells[key(x,y)]; return cc.val && norm(cc.val) === norm(cc.ch); });
+    if (ok){ solve(w); any = true; }
+  });
+  return any;
+}
+function solve(w){
+  w.solved = true;
+  w.pts = [10,7,4,0][Math.min(w.hints,3)];
+  score += w.pts; updateScore();
+  w.bad = false;
+  w.cells.forEach(([x,y]) => { const c = cells[key(x,y)]; c.val = c.ch; c.solved = true; c.el.classList.remove('wrong'); c.el.classList.toggle('wordwrong', c.words.some(i => i !== w.id && words[i].bad)); });
+  paint();
+  $('popTag').textContent = w.hints >= 3 ? 'המילה נחשפה' : `+${w.pts} נקודות`;
+  $('popWord').textContent = w.w;
+  $('popText').textContent = w.exp;
+  $('pop').hidden = false; $('popClose').focus();
+  if (words.every(x => x.solved)){ done = true; clearInterval(tick); if (started) $('clock').textContent = fmt(Date.now() - t0); }
+}
+function updateScore(){ $('score').textContent = `ניקוד: ${score}`; }
+
+function closePop(){
+  $('pop').hidden = true;
+  if (done){ showEnd(); return; }
+  const next = words.filter(w => !w.solved).sort((a,b) => a.num - b.num)[0];
+  if (next) select(next.id, firstOpen(next));
+}
+function showEnd(){
+  $('endScore').textContent = score;
+  $('endTime').textContent = started ? fmt(Date.now() - t0) : '00:00';
+  const clean = words.filter(w => w.hints === 0).length, helped = words.filter(w => w.hints > 0 && w.hints < 3).length, shown = words.filter(w => w.hints >= 3).length;
+  $('endBreak').textContent = `${clean} מילים נפתרו בלי רמזים, ${helped} עם רמזים ו-${shown} נחשפו.`;
+  $('end').hidden = false; $('endClose').focus();
+}
+
+$('hint').addEventListener('click', () => {
+  if (!cur || cur.solved) return;
+  startClock();
+  cur.hints++;
+  if (cur.hints >= 3){
+    cur.cells.forEach(([x,y]) => { const c = cells[key(x,y)]; c.val = c.ch; });
+    solve(cur); return;
+  }
+  const open = cur.cells.map(([x,y]) => cells[key(x,y)]).filter(c => !locked(c) && norm(c.val) !== norm(c.ch));
+  if (open.length){
+    const c = open[Math.floor(Math.random() * open.length)];
+    c.val = c.ch; c.given = true; c.el.classList.remove('wrong');
+    if (!checkWords(c)){ curIdx = firstOpen(cur); paint(); focusCell(); }
+  } else { paint(); }
+});
+$('check').addEventListener('click', () => {
+  let n = 0;
+  Object.values(cells).forEach(c => { const bad = c.val && !locked(c) && norm(c.val) !== norm(c.ch); c.el.classList.toggle('wrong', !!bad); if (bad) n++; });
+  $('activeClue').textContent = n ? `יש ${n === 1 ? 'אות אחת שגויה' : n + ' אותיות שגויות'}. הן מסומנות בלוח.` : 'כל האותיות שמילאתם נכונות עד עכשיו.';
+  if (cur) focusCell();
+});
+
+function onKey(e){
+  if (!cur) return;
+  const c = curCell();
+  const move = (dx,dy,dir) => {
+    e.preventDefault();
+    const n = cells[key(c.x+dx, c.y+dy)]; if (!n) return;
+    const w = n.words.map(i => words[i]).find(w => w.d === dir) || words[n.words[0]];
+    select(w.id, w.cells.findIndex(([x,y]) => x === n.x && y === n.y));
+  };
+  if (e.key === 'ArrowLeft') return move(1,0,'A');
+  if (e.key === 'ArrowRight') return move(-1,0,'A');
+  if (e.key === 'ArrowUp') return move(0,-1,'D');
+  if (e.key === 'ArrowDown') return move(0,1,'D');
+  if (e.key === 'Backspace'){ e.preventDefault(); backspace(); return; }
+  if (e.key === 'Enter' || e.key === 'Tab'){
+    e.preventDefault();
+    const list = words.filter(w => !w.solved).sort((a,b) => a.num - b.num || (a.d === 'A' ? -1 : 1));
+    if (!list.length) return;
+    const i = list.indexOf(cur); const nx = list[(i + (e.shiftKey ? -1 : 1) + list.length) % list.length] || list[0];
+    select(nx.id, firstOpen(nx));
+  }
+}
+function backspace(){
+  if (!cur || done) return;
+  let c = curCell();
+  c.words.forEach(i => markWord(words[i], false));
+  if (!locked(c) && c.val){ c.val = ''; c.el.classList.remove('wrong'); paint(); focusCell(); return; }
+  for (let k = curIdx - 1; k >= 0; k--){
+    const p = cells[key(...cur.cells[k])];
+    if (!locked(p)){ curIdx = k; p.val = ''; p.el.classList.remove('wrong'); break; }
+  }
+  paint(); focusCell();
+}
+
+function showTab(d, li){
+  ['A','D'].forEach(x => {
+    $('tab'+x).setAttribute('aria-selected', String(x === d));
+    $('clues'+x).hidden = x !== d;
+  });
+  if (li){
+    const side = document.querySelector('.side');
+    const top = li.offsetTop - side.offsetTop, bottom = top + li.offsetHeight;
+    if (top < side.scrollTop + 50) side.scrollTop = Math.max(0, top - 50);
+    else if (bottom > side.scrollTop + side.clientHeight) side.scrollTop = bottom - side.clientHeight + 10;
+  }
+}
+['A','D'].forEach(x => $('tab'+x).addEventListener('click', () => showTab(x)));
+
+/* On-screen keyboard */
+const ROWS = [['ק','ר','א','ט','ו','ן','ם','פ'],['ש','ד','ג','כ','ע','י','ח','ל','ך','ף'],['ז','ס','ב','ה','נ','מ','צ','ת','ץ']];
+let kbOn = matchMedia('(pointer: coarse)').matches;
+function buildKb(){
+  const kb = $('kb'); kb.innerHTML = ''; kb.dir = 'ltr';
+  ROWS.forEach((r,ri) => {
+    const row = document.createElement('div'); row.className = 'kb-row';
+    r.forEach(ch => { const b = document.createElement('button'); b.type = 'button'; b.textContent = ch; b.addEventListener('mousedown', e => e.preventDefault()); b.addEventListener('click', () => typeChar(ch)); row.appendChild(b); });
+    if (ri === 2){ const b = document.createElement('button'); b.type = 'button'; b.className = 'wide'; b.textContent = 'מחיקה'; b.addEventListener('mousedown', e => e.preventDefault()); b.addEventListener('click', backspace); row.appendChild(b); }
+    kb.appendChild(row);
+  });
+}
+function applyKbMode(){
+  $('kb').hidden = !kbOn;
+  $('kbToggle').textContent = kbOn ? 'הסתרת המקלדת' : 'מקלדת על המסך';
+  Object.values(cells || {}).forEach(c => c.inp && c.inp.setAttribute('inputmode', kbOn ? 'none' : 'text'));
+}
+$('kbToggle').addEventListener('click', () => { kbOn = !kbOn; applyKbMode(); if (cur) focusCell(); });
+
+$('popClose').addEventListener('click', closePop);
+$('pop').addEventListener('click', e => { if (e.target === $('pop')) closePop(); });
+$('endClose').addEventListener('click', () => $('end').hidden = true);
+$('again').addEventListener('click', () => { $('end').hidden = true; setup(); });
+addEventListener('keydown', e => {
+  if (!$('pop').hidden && (e.key === 'Enter' || e.key === 'Escape')){ e.preventDefault(); closePop(); }
+  else if (!$('end').hidden && e.key === 'Escape') $('end').hidden = true;
+});
+
+buildKb(); setup();
+
+/* ---------- Starfield ---------- */
+function rng(seed){ return function(){ seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const cv = $('stars'), cx = cv.getContext('2d');
+let W, H, dpr, base, bright = [], sprite;
+
+function makeSprite(){
+  const s = document.createElement('canvas'); s.width = s.height = 64;
+  const g = s.getContext('2d');
+  const gr = g.createRadialGradient(32,32,0,32,32,32);
+  gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(.08,'rgba(255,255,255,.9)');
+  gr.addColorStop(.22,'rgba(200,220,255,.25)'); gr.addColorStop(1,'rgba(200,220,255,0)');
+  g.fillStyle = gr; g.fillRect(0,0,64,64);
+  return s;
+}
+
+function build(){
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight;
+  cv.width = W*dpr; cv.height = H*dpr;
+  base = document.createElement('canvas'); base.width = cv.width; base.height = cv.height;
+  const b = base.getContext('2d'); b.scale(dpr,dpr);
+  const R = rng(42), M = Math.max(W,H);
+
+  [[.15,.2,.6,'rgba(35,65,140,.22)'],[.85,.12,.5,'rgba(85,55,135,.13)'],[.55,.45,.65,'rgba(25,100,135,.10)'],[.3,.6,.4,'rgba(60,40,110,.08)']]
+  .forEach(([x,y,r,c]) => {
+    const g = b.createRadialGradient(x*W,y*H,0,x*W,y*H,r*M);
+    g.addColorStop(0,c); g.addColorStop(1,'rgba(0,0,0,0)');
+    b.fillStyle = g; b.fillRect(0,0,W,H);
+  });
+
+  const ang = Math.atan2(-.8*H, 1.2*W), cxm = W/2, cym = H*.45, bw = M*.13;
+  b.save(); b.translate(cxm,cym); b.rotate(ang);
+  const lg = b.createLinearGradient(0,-bw*1.6,0,bw*1.6);
+  lg.addColorStop(0,'rgba(170,185,220,0)'); lg.addColorStop(.5,'rgba(190,200,230,.07)'); lg.addColorStop(1,'rgba(170,185,220,0)');
+  b.fillStyle = lg; b.fillRect(-M*1.5,-bw*1.6,M*3,bw*3.2);
+  b.restore();
+
+  const cols = ['255,255,255','205,222,255','255,236,214','255,214,176','185,206,255'];
+  const dot = (x,y,r,a,c) => { b.fillStyle = `rgba(${c},${a})`; b.beginPath(); b.arc(x,y,r,0,Math.PI*2); b.fill(); };
+  const n1 = Math.round(W*H/850);
+  for (let i=0;i<n1;i++) dot(R()*W, R()*H, Math.pow(R(),3)*1.05+.18, .2+R()*.65, cols[(R()*cols.length)|0]);
+  const n2 = Math.round(W*H/420), cos = Math.cos(ang), sin = Math.sin(ang);
+  for (let i=0;i<n2;i++){
+    const along = (R()-.5)*M*2.4, off = (R()+R()+R()-1.5)/1.5*bw;
+    dot(cxm + along*cos - off*sin, cym + along*sin + off*cos, R()*.45+.15, .08+R()*.4, cols[(R()*2)|0]);
+  }
+
+  bright = [];
+  const nb = Math.round(W*H/26000)+12;
+  for (let i=0;i<nb;i++) bright.push({ x:R()*W, y:R()*H*.85, s:10+Math.pow(R(),2)*22, a:.45+R()*.5, sp:.0006+R()*.0012, ph:R()*6.28 });
+}
+
+function frame(t){
+  cx.setTransform(1,0,0,1,0,0); cx.clearRect(0,0,cv.width,cv.height);
+  cx.drawImage(base,0,0);
+  cx.setTransform(dpr,0,0,dpr,0,0);
+  for (const s of bright){
+    cx.globalAlpha = s.a * (reduce ? 1 : (.72 + .28*Math.sin(t*s.sp + s.ph)));
+    cx.drawImage(sprite, s.x - s.s/2, s.y - s.s/2, s.s, s.s);
+  }
+  cx.globalAlpha = 1;
+  if (!reduce) requestAnimationFrame(frame);
+}
+
+sprite = makeSprite(); build();
+if (reduce) frame(0); else requestAnimationFrame(frame);
+let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { build(); if (reduce) frame(0); }, 150); });
+
+/* ---------- Earth texture (seamless, procedural) ---------- */
+function earthTexture(){
+  const TW = 1200, TH = 180;
+  const c = document.createElement('canvas'); c.width = TW; c.height = TH;
+  const g = c.getContext('2d'), img = g.createImageData(TW,TH), d = img.data;
+  const hash = (x,y,s) => { let h = (x*374761393 + y*668265263 + s*982451653) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); h ^= h >>> 16; return (h >>> 0) / 4294967295; };
+  const vn = (x,y,p,s) => {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x-xi, yf = y-yi;
+    const u = xf*xf*(3-2*xf), v = yf*yf*(3-2*yf);
+    const x0 = ((xi%p)+p)%p, x1 = (x0+1)%p;
+    const a = hash(x0,yi,s), b = hash(x1,yi,s), c2 = hash(x0,yi+1,s), e = hash(x1,yi+1,s);
+    return a + (b-a)*u + (c2-a)*v + (a-b-c2+e)*u*v;
+  };
+  const fbm = (x,y,s,cells) => { let sum=0, amp=.5, nrm=0, f=1; for (let o=0;o<5;o++){ const p = cells*f; sum += amp*vn(x*p, y*p, p, s+o*17); nrm += amp; amp *= .5; f *= 2; } return sum/nrm; };
+  const ss = (a,b,x) => { const t = Math.min(1,Math.max(0,(x-a)/(b-a))); return t*t*(3-2*t); };
+  for (let y=0;y<TH;y++){
+    for (let x=0;x<TW;x++){
+      const nx = x/TW, ny = y/TW*1.9;
+      const land = ss(.555,.59, fbm(nx,ny,11,6));
+      const tone = fbm(nx,ny,5,14);
+      const wx = fbm(nx,ny,3,4)*.04;
+      const cl = ss(.5,.74, fbm(nx+wx,ny,29,9)) * .95;
+      const la = land*.62;
+      const lr = 58 + tone*70, lgc = 72 + tone*40, lb = 48 + tone*20;
+      const A = cl + la*(1-cl);
+      const i = (y*TW+x)*4;
+      if (A > 0.001){
+        d[i]   = (lr*la*(1-cl) + 246*cl)/A;
+        d[i+1] = (lgc*la*(1-cl) + 249*cl)/A;
+        d[i+2] = (lb*la*(1-cl) + 255*cl)/A;
+      }
+      d[i+3] = A*255;
+    }
+  }
+  g.putImageData(img,0,0);
+  const el = $('clouds');
+  el.style.backgroundImage = `url(${c.toDataURL()})`;
+  requestAnimationFrame(() => el.classList.add('ready'));
+}
+setTimeout(earthTexture, 60);
+</script>
+</body>
+</html>
