@@ -1,0 +1,283 @@
+<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>שקף פרק</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#d8b46a;--cream:#f1e3c2;--ink:#e9eef7;--dim:rgba(200,212,232,.42);--line:rgba(160,190,235,.28)}
+html,body{margin:0;height:100%;overflow:hidden;font-family:Heebo,system-ui,sans-serif;color:var(--ink);
+  background:radial-gradient(ellipse 60% 75% at 25% 50%,#122453 0%,#0a1431 45%,#050a18 100%)}
+svg#art{position:fixed;inset:0;width:100%;height:100%;display:block}
+.note{position:fixed;left:2.2vw;top:2.4vh;font-size:max(11px,1vw);color:rgba(200,210,230,.5)}
+#route{position:fixed;left:7%;right:7%;top:79%;height:clamp(110px,18vh,190px)}
+#route{left:auto;right:9%;width:37%}
+#track{position:absolute;left:0;right:0;top:20%;height:2px;background:var(--line)}
+#done{position:absolute;right:0;top:20%;height:2px;width:0;background:linear-gradient(to left,rgba(216,180,106,.9),rgba(216,180,106,.6));box-shadow:0 0 10px rgba(216,180,106,.55)}
+.st{position:absolute;top:20%;transform:translate(50%,-50%);display:flex;flex-direction:column;align-items:center;width:9.5vw}
+.dot{width:clamp(18px,1.7vw,26px);height:clamp(18px,1.7vw,26px);border-radius:50%;border:2px solid var(--dim);background:#07102a;display:grid;place-items:center;font-weight:700;font-size:clamp(10px,.9vw,14px);color:var(--dim);transition:all .8s ease}
+.lbl{position:absolute;top:calc(50% + clamp(18px,1.9vw,28px));text-align:center;font-size:clamp(12px,1.05vw,17px);line-height:1.25;color:var(--dim)}
+.st.past .dot{border-color:var(--gold);background:rgba(216,180,106,.2);color:var(--gold)}
+.st.past .lbl{color:rgba(233,238,247,.68)}
+.st.now .dot{width:clamp(30px,2.7vw,42px);height:clamp(30px,2.7vw,42px);border-color:var(--gold);background:var(--gold);color:#1a1206;font-size:clamp(14px,1.25vw,20px);opacity:0}
+.st.now.lit .dot{opacity:1;animation:pulse 2.4s ease-out infinite}
+.st.now .lbl{color:var(--ink);font-weight:500}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(216,180,106,.55)}70%{box-shadow:0 0 0 clamp(12px,1.4vw,20px) rgba(216,180,106,0)}100%{box-shadow:0 0 0 0 rgba(216,180,106,0)}}
+#probe{position:absolute;top:20%;width:9px;height:9px;border-radius:50%;background:#fff6dd;transform:translate(50%,-50%);box-shadow:0 0 12px 4px rgba(255,220,150,.75),0 0 28px 9px rgba(216,180,106,.3);opacity:0}
+</style></head><body>
+<svg id="art" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <defs>
+    <filter id="glow" filterUnits="userSpaceOnUse" x="-2000" y="-2000" width="6000" height="6000"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 .8  0 0 0 0 .75  0 0 0 0 .6  0 0 0 .07 0"/></filter>
+    <radialGradient id="sunG" cx="42%" cy="40%" r="62%"><stop offset="0" stop-color="#fff6d8"/><stop offset=".45" stop-color="#f6c76a"/><stop offset="1" stop-color="#c9781f"/></radialGradient>
+    <radialGradient id="haloG"><stop offset=".35" stop-color="rgba(255,196,110,.38)"/><stop offset="1" stop-color="rgba(255,170,80,0)"/></radialGradient>
+    <linearGradient id="shadeL" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="rgba(5,10,24,.78)"/><stop offset=".55" stop-color="rgba(5,10,24,0)"/></linearGradient>
+    <linearGradient id="ground" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="rgba(122,58,34,.55)"/><stop offset="1" stop-color="rgba(60,26,16,.15)"/></linearGradient>
+  </defs>
+  <rect width="1600" height="900" filter="url(#grain)"/>
+  <g id="stars"></g>
+  <g id="scene"></g>
+</svg>
+<div class="note" id="note"></div>
+<div id="route"><div id="track"></div><div id="done"></div><div id="probe"></div></div>
+<script>
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, at, parent) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (parent) parent.appendChild(e); return e; };
+const OFF = 800, GOLD = '#d8b46a', CREAM = '#f1e3c2';
+const cur = Math.min(4, Math.max(1, +(new URLSearchParams(location.search).get('n') || 1))) - 1;
+const scene = document.getElementById('scene');
+
+// faint stars (fewer on the left, where the drawing is)
+const stars = document.getElementById('stars');
+for (let i = 0; i < 170; i++){ const x = Math.random()*1600, y = Math.random()*900;
+  el('circle', {cx:x, cy:y, r:(Math.random()*1.1+.3).toFixed(2), fill:'#dfe7ff', opacity:(Math.random()*.45+.1).toFixed(2)}, stars); }
+
+// draws a path/shape progressively, then calls done
+function drawOn(node, delay, dur){
+  const len = node.getTotalLength ? node.getTotalLength() : 1000;
+  node.style.strokeDasharray = len; node.style.strokeDashoffset = len;
+  node.animate([{strokeDashoffset:len},{strokeDashoffset:0}], {duration:dur, delay:delay+OFF, easing:'cubic-bezier(.45,.05,.3,1)', fill:'forwards'});
+}
+const fadeIn = (node, delay, dur=700) => { node.style.opacity = 0; node.animate([{opacity:0},{opacity:1}], {duration:dur, delay:delay+OFF, fill:'forwards'}); };
+
+/* ---------- Chapter A: the solar system as a gold-line orrery ---------- */
+function chapterA(){
+  document.getElementById('note').textContent = 'המרחקים והגדלים אינם לפי קנה מידה';
+  const S = {x:400, y:450}, TILT = .38, ROT = -8;
+  // rx of each orbit in drawing units; r = planet radius; T = orbital period in Earth years (real ratios)
+  const P = [
+    {rx: 92, r: 6.5, T: .241,  c:'#b8b0a3'},              // Mercury
+    {rx:124, r: 9.5, T: .615,  c:'#eadcb8'},              // Venus (plain cream clouds)
+    {rx:156, r:10,   T: 1,     c:'#6fa3d6', earth:true},  // Earth
+    {rx:188, r: 7.5, T: 1.881, c:'#c8674a'},              // Mars
+    {rx:262, r:20,   T: 11.86, c:'#d9b78f', bands:true},  // Jupiter
+    {rx:308, r:16,   T: 29.46, c:'#e6d29f', ring:true},   // Saturn
+    {rx:348, r:12,   T: 84.0,  c:'#a7d6d8'},              // Uranus
+    {rx:384, r:12,   T: 164.8, c:'#7896de'}];             // Neptune
+  const YEAR = 14000;                                       // one Earth year on screen, ms
+  const root = el('g', {transform:`rotate(${ROT} ${S.x} ${S.y})`}, scene);
+  const back = el('g', {}, root), mid = el('g', {}, root), front = el('g', {}, root);
+  const arc = (rx, ry, sweepTop) => `M ${S.x-rx} ${S.y} A ${rx} ${ry} 0 0 ${sweepTop?1:0} ${S.x+rx} ${S.y}`;
+  // orbit rings: back half (behind the Sun) and front half (over it)
+  P.forEach((p,i) => {
+    const ry = p.rx*TILT, st = {fill:'none', stroke:GOLD, 'stroke-width':1.2, opacity:.62, filter:'url(#glow)'};
+    const b = el('path', Object.assign({d:arc(p.rx, ry, 1)}, st), back), f = el('path', Object.assign({d:arc(p.rx, ry, 0)}, st), front);
+    const d = 500 + i*170; drawOn(b, d, 1100); drawOn(f, d, 1100); p.ry = ry; p.delay = d + 700;
+  });
+  // asteroid belt: dotted ring between Mars and Jupiter
+  const belt = el('g', {opacity:0}, mid), bd = [];
+  for (let i = 0; i < 170; i++){ const a = Math.random()*6.283, rr = 214 + Math.random()*22;
+    bd.push({a, rr, n:el('circle', {r:(Math.random()*1.2+.5).toFixed(2), fill:CREAM, opacity:(Math.random()*.5+.25).toFixed(2)}, belt)}); }
+  belt.animate([{opacity:0},{opacity:1}], {duration:1200, delay:1300+OFF, fill:'forwards'});
+  // the Sun: glowing disc with slowly turning rays
+  const sun = el('g', {}, mid);
+  el('circle', {cx:S.x, cy:S.y, r:120, fill:'url(#haloG)'}, sun);
+  const rays = el('g', {}, sun);
+  for (let k = 0; k < 24; k++){ const a = k*Math.PI/12, r1 = 52, r2 = k%2 ? 64 : 76;
+    el('line', {x1:S.x+r1*Math.cos(a), y1:S.y+r1*Math.sin(a), x2:S.x+r2*Math.cos(a), y2:S.y+r2*Math.sin(a), stroke:GOLD, 'stroke-width':1.4, 'stroke-linecap':'round', opacity:.8}, rays); }
+  const disc = el('circle', {cx:S.x, cy:S.y, r:44, fill:'url(#sunG)', stroke:'#f6d58c', 'stroke-width':1.5, filter:'url(#glow)'}, sun);
+  sun.style.transformOrigin = `${S.x}px ${S.y}px`;
+  sun.animate([{opacity:0, transform:'scale(.6)'},{opacity:1, transform:'scale(1)'}], {duration:1100, delay:150+OFF, easing:'cubic-bezier(.2,.8,.2,1)', fill:'forwards'});
+  // planets: tinted disc + gold outline + a shadow on the side away from the Sun
+  P.forEach((p,i) => {
+    const g = el('g', {}, front), id = 'cp'+i;
+    const cp = el('clipPath', {id}, scene); const cc = el('circle', {r:p.r}, cp);
+    if (p.ring){ p.ringBack = el('path', {d:'', fill:'none', stroke:CREAM, 'stroke-width':1.6, opacity:.85}, g); }
+    el('circle', {r:p.r, fill:p.c}, g);
+    if (p.bands) [-.35,.05,.4].forEach(y => el('rect', {x:-p.r, y:y*p.r-1.2, width:2*p.r, height:2.4, fill:'#a8754d', opacity:.5, 'clip-path':`url(#${id})`}, g));
+    if (p.earth) el('path', {d:`M ${-p.r*.5} ${-p.r*.2} q ${p.r*.3} ${-p.r*.5} ${p.r*.7} ${-p.r*.2} q ${-p.r*.1} ${p.r*.4} ${-p.r*.5} ${p.r*.6} z`, fill:'#7fae6a', opacity:.85, 'clip-path':`url(#${id})`}, g);
+    const sh = el('circle', {r:p.r*1.15, fill:'#050a18', opacity:.62, 'clip-path':`url(#${id})`}, g);
+    el('circle', {r:p.r, fill:'none', stroke:GOLD, 'stroke-width':1.2}, g);
+    if (p.ring){ p.ringFront = el('path', {d:'', fill:'none', stroke:CREAM, 'stroke-width':1.6, opacity:.95}, g); }
+    p.g = g; p.sh = sh; p.ph = Math.random()*6.283; fadeIn(g, p.delay, 900);
+  });
+  const t0 = performance.now();
+  (function tick(now){
+    const t = now - t0;
+    rays.setAttribute('transform', `rotate(${(t/400)%360} ${S.x} ${S.y})`);
+    bd.forEach(b => { const a = b.a + t/YEAR/4.6*6.283; b.n.setAttribute('cx', S.x + b.rr*Math.cos(a)); b.n.setAttribute('cy', S.y - b.rr*TILT*Math.sin(a)); });
+    P.forEach(p => {
+      const a = p.ph + t/(YEAR*p.T)*6.283, x = S.x + p.rx*Math.cos(a), y = S.y - p.ry*Math.sin(a);
+      p.g.setAttribute('transform', `translate(${x} ${y})`);
+      // keep planets behind the Sun on the far half of their orbit
+      const behind = Math.sin(a) > 0; if (behind && p.g.parentNode !== back) back.appendChild(p.g); else if (!behind && p.g.parentNode !== front) front.appendChild(p.g);
+      const dx = x - S.x, dy = y - S.y, d = Math.hypot(dx, dy) || 1;
+      p.sh.setAttribute('cx', dx/d*p.r*.95); p.sh.setAttribute('cy', dy/d*p.r*.95);
+      if (p.ring){ const R = p.r*2.3, r2 = p.r*.75;
+        p.ringBack.setAttribute('d', `M ${-R} 0 A ${R} ${r2} 0 0 1 ${R} 0`); p.ringFront.setAttribute('d', `M ${-R} 0 A ${R} ${r2} 0 0 0 ${R} 0`); }
+    });
+    requestAnimationFrame(tick);
+  })(t0);
+}
+
+/* shared look for line drawings */
+const line = (w=1.6, c=GOLD) => ({fill:'none', stroke:c, 'stroke-width':w, 'stroke-linecap':'round', 'stroke-linejoin':'round', filter:'url(#glow)'});
+// draw every shape in a group one after another
+function drawGroup(g, start, step, dur){ let d = start; g.querySelectorAll('path,line,circle,rect,ellipse,polyline').forEach(n => { if (n.dataset.skip) return; drawOn(n, d, dur); d += step; }); return d; }
+
+/* ---------- Chapter B: Jupiter and Earth at true scale ---------- */
+function chapterB(){
+  document.getElementById('note').textContent = 'הגדלים לפי קנה מידה: קוטר צדק גדול פי 11 בערך מקוטר כדור הארץ';
+  const J = {x:330, y:430, r:190}, ER = J.r/11.2, E = {x:640, y:J.y + J.r - ER};
+  const art = el('g', {}, scene);
+  // Jupiter
+  el('clipPath', {id:'jc'}, scene).appendChild(el('circle', {cx:J.x, cy:J.y, r:J.r}));
+  const bands = el('g', {'clip-path':'url(#jc)'}, art);
+  [[-1,-.62,'#c6b298'],[-.62,-.42,'#efe1c6'],[-.42,-.2,'#b98557'],[-.2,.08,'#f2e6cf'],[.08,.3,'#c08a5c'],[.3,.55,'#ecdcbf'],[.55,.76,'#c7a27c'],[.76,1,'#b9a993']]
+    .forEach(([a,b,c],i) => { const r = el('rect', {x:J.x-J.r, y:J.y+a*J.r, width:2*J.r, height:(b-a)*J.r+1, fill:c}, bands); fadeIn(r, 1500 + i*120, 600); });
+  const grs = el('ellipse', {cx:J.x+J.r*.32, cy:J.y+J.r*.3, rx:J.r*.12, ry:J.r*.07, fill:'#c4643f', opacity:.85}, bands); fadeIn(grs, 2600, 700);
+  el('rect', {x:J.x-J.r, y:J.y-J.r, width:2*J.r, height:2*J.r, fill:'url(#shadeL)'}, bands);
+  const jo = el('circle', Object.assign({cx:J.x, cy:J.y, r:J.r}, line(2)), art); drawOn(jo, 300, 1400);
+  // Earth, at true scale
+  const eg = el('g', {}, art);
+  el('clipPath', {id:'ec'}, scene).appendChild(el('circle', {cx:E.x, cy:E.y, r:ER}));
+  el('circle', {cx:E.x, cy:E.y, r:ER, fill:'#3f7fc4'}, eg);
+  el('path', {d:`M ${E.x-ER*.6} ${E.y-ER*.1} q ${ER*.4} ${-ER*.7} ${ER*.9} ${-ER*.3} q ${-ER*.1} ${ER*.5} ${-ER*.6} ${ER*.8} z`, fill:'#79a85f', 'clip-path':'url(#ec)'}, eg);
+  el('rect', {x:E.x-ER, y:E.y-ER, width:2*ER, height:2*ER, fill:'url(#shadeL)', 'clip-path':'url(#ec)'}, eg);
+  el('circle', Object.assign({cx:E.x, cy:E.y, r:ER}, line(1.3)), eg);
+  eg.style.transformOrigin = `${E.x}px ${E.y}px`;
+  eg.animate([{opacity:0, transform:'scale(.2)'},{opacity:1, transform:'scale(1)'}], {duration:800, delay:3300+OFF, easing:'cubic-bezier(.2,1.4,.4,1)', fill:'both'});
+  // measuring lines under both
+  const Y = J.y + J.r + 46, dim = el('g', {opacity:.85}, art);
+  [[J.x-J.r, J.x+J.r],[E.x-ER, E.x+ER]].forEach(([a,b],k) => {
+    const d0 = k ? 4300 : 2000;
+    drawOn(el('line', Object.assign({x1:a, y1:Y, x2:b, y2:Y}, line(1.2)), dim), d0, 900);
+    [a,b].forEach(x => drawOn(el('line', Object.assign({x1:x, y1:Y-9, x2:x, y2:Y+9}, line(1.2)), dim), d0, 300));
+    drawOn(el('line', Object.assign({x1:a, y1:Y-14, x2:a, y2:k ? E.y : J.y}, line(.8, 'rgba(216,180,106,.45)')), dim), d0, 600);
+    drawOn(el('line', Object.assign({x1:b, y1:Y-14, x2:b, y2:k ? E.y : J.y}, line(.8, 'rgba(216,180,106,.45)')), dim), d0, 600);
+  });
+  // eleven Earths lined up across Jupiter's equator
+  const row = el('g', {}, art);
+  for (let i = 0; i < 11; i++){ const c = el('circle', Object.assign({cx:J.x-J.r+ER+i*2*ER*1.018, cy:J.y, r:ER}, line(1.1, CREAM)), row); c.setAttribute('fill', 'rgba(63,127,196,.22)'); fadeIn(c, 4800 + i*230, 400); }
+}
+
+/* ---------- Chapter C: a rover driving and leaving tracks ---------- */
+function chapterC(){
+  const gy = x => x <= 600 ? 600 + .00011*(x-350)**2 : 600 + .00011*250**2 + .0073*(x-600)**2;
+  let d = 'M -20 ' + gy(-20); for (let x = 0; x <= 820; x += 10) d += ` L ${x} ${gy(x).toFixed(1)}`;
+  el('path', {d: d + ' L 820 920 L -20 920 Z', fill:'url(#ground)', opacity:.9}, scene);
+  drawOn(el('path', Object.assign({d}, line(1.8)), scene), 200, 1600);
+  // far hills and a few rocks
+  drawOn(el('path', Object.assign({d:'M -20 545 C 120 520, 230 528, 330 540 S 520 520, 640 548'}, line(1, 'rgba(216,180,106,.4)')), scene), 700, 1500);
+  [[130,9,5],[205,5,3],[90,4,3],[640,6,3]].forEach(([x,rx,ry],i) => drawOn(el('ellipse', Object.assign({cx:x, cy:gy(x)+ry*.2, rx, ry}, line(1.1)), scene), 1200+i*120, 500));
+  const tracks = el('path', {d:'', stroke:'rgba(241,227,194,.55)', 'stroke-width':1.6, fill:'none'}, scene);
+  // the rover (side view, facing left): wheels, rocker-bogie, body, mast with cameras, arm, power unit, antenna
+  const R = el('g', {}, scene), W = [];
+  const wheel = cx => { const g = el('g', {}, R); el('circle', Object.assign({cx, cy:-20, r:20}, line(1.6)), g); el('circle', Object.assign({cx, cy:-20, r:4}, line(1.2)), g);
+    const sp = el('g', {}, g); [0,60,120].forEach(a => { const t = a*Math.PI/180; el('line', Object.assign({x1:cx-17*Math.cos(t), y1:-20-17*Math.sin(t), x2:cx+17*Math.cos(t), y2:-20+17*Math.sin(t)}, line(1)), sp); }); W.push({sp, cx}); };
+  [-80, 0, 80].forEach(wheel);
+  el('polyline', Object.assign({points:'-80,-20 -45,-58 0,-20'}, line(1.5)), R);
+  el('polyline', Object.assign({points:'-45,-58 25,-66 80,-20'}, line(1.5)), R);
+  el('rect', Object.assign({x:-95, y:-112, width:190, height:46, rx:5}, line(1.7)), R);
+  el('line', Object.assign({x1:-95, y1:-96, x2:95, y2:-96}, line(1)), R);
+  el('rect', Object.assign({x:95, y:-108, width:30, height:30, rx:3}, line(1.4)), R);
+  [101,109,117].forEach(x => el('line', Object.assign({x1:x, y1:-106, x2:x, y2:-80}, line(.9)), R));
+  el('line', Object.assign({x1:-60, y1:-112, x2:-60, y2:-198}, line(1.6)), R);
+  el('rect', Object.assign({x:-88, y:-222, width:52, height:24, rx:4}, line(1.6)), R);
+  [-74,-52].forEach(x => el('circle', Object.assign({cx:x, cy:-210, r:5}, line(1.2)), R));
+  el('line', Object.assign({x1:35, y1:-112, x2:35, y2:-128}, line(1.3)), R);
+  el('ellipse', Object.assign({cx:35, cy:-131, rx:19, ry:6}, line(1.4)), R);
+  el('polyline', Object.assign({points:'-95,-82 -138,-98 -158,-62'}, line(1.6)), R);
+  el('circle', Object.assign({cx:-158, cy:-56, r:8}, line(1.4)), R);
+  drawGroup(R, 1500, 110, 800);
+  const X0 = 520, X1 = 300, START = 5200 + OFF, DUR = 26000, t0 = performance.now();
+  (function tick(now){
+    const k = Math.min(1, Math.max(0, (now - t0 - START) / DUR)), x = X0 + (X1 - X0) * k;
+    R.setAttribute('transform', `translate(${x} ${gy(x).toFixed(1)}) scale(1.3)`);
+    W.forEach(w => w.sp.setAttribute('transform', `rotate(${-(X0-x)/22*57.3} ${w.cx} -20)`));
+    if (k > 0){ let p = ''; for (let tx = x + 124; tx <= X0 + 124; tx += 12) p += `M ${tx} ${(gy(tx)+3).toFixed(1)} l 0 6 `; tracks.setAttribute('d', p); }
+    if (k < 1) requestAnimationFrame(tick);
+  })(t0);
+}
+
+/* ---------- Chapter D: sketching a spacecraft and its route ---------- */
+function chapterD(){
+  const C = {x:390, y:450};
+  const guide = el('g', {opacity:.35}, scene);
+  drawOn(el('circle', Object.assign({cx:C.x, cy:C.y, r:300}, line(.8, 'rgba(216,180,106,.5)')), guide), 0, 2200);
+  drawOn(el('line', Object.assign({x1:40, y1:C.y, x2:760, y2:C.y}, line(.8, 'rgba(216,180,106,.5)')), guide), 200, 1600);
+  drawOn(el('line', Object.assign({x1:C.x, y1:110, x2:C.x, y2:800}, line(.8, 'rgba(216,180,106,.5)')), guide), 300, 1600);
+  const S = el('g', {transform:`translate(${C.x} ${C.y})`}, scene);
+  // body with foil lines, engine, dish with feed, struts, two solar wings with cells, instrument boom
+  el('rect', Object.assign({x:-45, y:-40, width:90, height:80, rx:4}, line(1.8)), S);
+  [[-45,-10,-15,-40],[-45,25,20,-40],[-25,40,45,-30],[10,40,45,5]].forEach(([a,b,c,d2]) => el('line', Object.assign({x1:a, y1:b, x2:c, y2:d2}, line(.9)), S));
+  el('path', Object.assign({d:'M -14 40 L -24 72 L 24 72 L 14 40'}, line(1.5)), S);
+  el('line', Object.assign({x1:-30, y1:-40, x2:-52, y2:-70}, line(1.3)), S);
+  el('line', Object.assign({x1:30, y1:-40, x2:52, y2:-70}, line(1.3)), S);
+  el('path', Object.assign({d:'M -88 -70 Q 0 -150 88 -70 Z'}, line(1.8)), S);
+  el('line', Object.assign({x1:0, y1:-76, x2:0, y2:-120}, line(1.2)), S);
+  el('circle', Object.assign({cx:0, cy:-124, r:4.5}, line(1.2)), S);
+  [-1, 1].forEach(s => {
+    el('line', Object.assign({x1:45*s, y1:0, x2:82*s, y2:0}, line(1.5)), S);
+    const x0 = s < 0 ? -262 : 82;
+    el('rect', Object.assign({x:x0, y:-34, width:180, height:68, rx:2}, line(1.7)), S);
+    [45,90,135].forEach(dx => el('line', Object.assign({x1:x0+dx, y1:-34, x2:x0+dx, y2:34}, line(.9)), S));
+    el('line', Object.assign({x1:x0, y1:0, x2:x0+180, y2:0}, line(.9)), S);
+  });
+  el('line', Object.assign({x1:30, y1:40, x2:140, y2:150}, line(1.3)), S);
+  el('rect', Object.assign({x:136, y:146, width:10, height:10}, line(1.2)), S);
+  const dEnd = drawGroup(S, 900, 160, 700);
+  // the planned route: a dotted path to a distant world
+  const target = {x:150, y:170};
+  const route = el('path', {d:`M ${C.x-60} ${C.y-150} C ${C.x-120} ${C.y-260}, ${target.x+150} ${target.y+40}, ${target.x+34} ${target.y+10}`, fill:'none'}, scene);
+  const L = route.getTotalLength();
+  for (let s = 0, i = 0; s < L; s += 16, i++){ const p = route.getPointAtLength(s); fadeIn(el('circle', {cx:p.x, cy:p.y, r:2.2, fill:CREAM}, scene), dEnd + 300 + i*70, 250); }
+  const pg = el('g', {}, scene);
+  el('circle', {cx:target.x, cy:target.y, r:24, fill:'#7c8fb8'}, pg);
+  el('circle', {cx:target.x, cy:target.y, r:24, fill:'url(#shadeL)'}, pg);
+  el('circle', Object.assign({cx:target.x, cy:target.y, r:24}, line(1.5)), pg);
+  el('ellipse', Object.assign({cx:target.x, cy:target.y, rx:44, ry:10, transform:`rotate(-14 ${target.x} ${target.y})`}, line(1.3, CREAM)), pg);
+  fadeIn(pg, dEnd + 300 + Math.ceil(L/16)*70, 900);
+  // a drafting compass lying on the sheet
+  const K = el('g', {}, scene);
+  el('line', Object.assign({x1:640, y1:578, x2:640, y2:600}, line(1.8)), K);
+  el('circle', Object.assign({cx:640, cy:606, r:7}, line(1.5)), K);
+  el('line', Object.assign({x1:636, y1:612, x2:588, y2:760}, line(1.7)), K);
+  el('line', Object.assign({x1:644, y1:612, x2:706, y2:752}, line(1.7)), K);
+  el('path', Object.assign({d:'M 588 760 l -3 12 M 706 752 l 4 11'}, line(1.5, CREAM)), K);
+  drawGroup(K, 400, 200, 900);
+  // the finished sketch floats gently
+  const t0 = performance.now();
+  (function bob(now){ S.setAttribute('transform', `translate(${C.x} ${(C.y + Math.sin((now-t0)/1400)*4).toFixed(2)})`); requestAnimationFrame(bob); })(t0);
+}
+
+/* ---------- the lesson route: four stations on the right ---------- */
+const CH = [{n:'א', t:'מכירים את השכונה'}, {n:'ב', t:'כמה גדול, כמה רחוק, כמה מהר'}, {n:'ג', t:'איך חוקרים עולם רחוק'}, {n:'ד', t:'עכשיו תורכם'}];
+const route = document.getElementById('route'), POS = [0, 1/3, 2/3, 1];
+CH.forEach((c,i) => {
+  const d = document.createElement('div'); d.className = 'st' + (i < cur ? ' past' : i === cur ? ' now' : '');
+  d.style.right = (POS[i]*100) + '%';
+  d.innerHTML = `<div class="dot">${i < cur ? '✓' : c.n}</div><div class="lbl">${c.t}</div>`;
+  route.appendChild(d);
+});
+const done = document.getElementById('done'), probe = document.getElementById('probe'), now = route.querySelector('.st.now');
+const from = cur === 0 ? -0.08 : POS[cur-1], to = POS[cur], ease = x => x < .5 ? 2*x*x : 1 - Math.pow(-2*x+2, 2)/2;
+const T0 = performance.now() + 900 + OFF, DUR = 2200;
+done.style.width = (Math.max(0, from)*100) + '%';
+(function move(t){
+  const k = Math.min(1, Math.max(0, (t - T0) / DUR)), p = from + (to - from) * ease(k);
+  probe.style.opacity = k > 0 && k < 1 ? 1 : 0; probe.style.right = (p*100) + '%';
+  done.style.width = (Math.max(0, cur === 0 ? 0 : p) * 100) + '%';
+  if (k >= 1){ now.classList.add('lit'); done.style.width = (to*100) + '%'; return; }
+  requestAnimationFrame(move);
+})(performance.now());
+
+[chapterA, chapterB, chapterC, chapterD][cur]();
+</script></body></html>
