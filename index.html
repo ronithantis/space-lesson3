@@ -46,7 +46,7 @@ body.edit-locked #toEdit{display:none}
 #bgvideo{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity 1.6s ease;pointer-events:none}
 #bgvideo.on{opacity:1}
 #shade{position:absolute;inset:0;pointer-events:none;transition:background .6s ease}
-#layers{position:absolute;inset:0}
+#layers{position:absolute;inset:0}#layers.passthru{pointer-events:none}#layers.passthru>*{pointer-events:auto}
 #media{position:absolute;inset:0;container-type:size;display:grid;place-items:center;pointer-events:none}
 #media .frame{pointer-events:auto;position:relative;border:1px solid rgba(255,255,255,.14);box-shadow:0 calc(var(--u)*1.5) calc(var(--u)*5) rgba(0,0,0,.7);border-radius:calc(var(--u)*.5);overflow:hidden;background:#000}
 #media iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
@@ -377,7 +377,7 @@ const P = (img,cap,o) => Object.assign(I(cap,{size:1.1,weight:500,gap:0}), {img}
 const WATCH = () => B(14,4.5,72,[T('צפו בסרטון',{size:2.4})]);
 
 const DEFAULTS = [
-  {id:'open', label:'פתיחה: מערכת השמש', bg:'open', bgAnim:'games/l3_orbits.html', audio:'l3_open', shade:'top', motion:'none', noAuto:true, blocks:[
+  {id:'open', label:'פתיחה: מערכת השמש', bg:'stars', bgAnim:'games/l3_orbits.html', audio:'l3_open', shade:'top', motion:'none', noAuto:true, blocks:[
     B(15,5,70,[G('קורס החלל · שיעור 3',{size:1.8,gap:0}), T('מערכת השמש',{size:5,gap:.2}), I('השכונה שלנו בחלל',{size:2.4,weight:500,gap:.2,at:5.5})],{align:'center'}),
     B(15,80,70,[G('עולמות סלעיים • ענקי גז • ירחים קפואים',{size:2,gap:0,seq:[8.2,9.1,10.0]}),
       I('ואיך חוקרים עולמות רחוקים כל כך',{size:1.8,gap:.4,at:11.0})],{align:'center'})]},
@@ -433,7 +433,7 @@ const DEFAULTS = [
       I('צדק: אין פני שטח מוצקים. החללית תשקע, והלחץ והחום ירסקו אותה.',{size:1.8,gap:.3,at:6.0}),
       G('לחקור ענק גז? צריך כלי אחר.',{size:2.1,gap:.5,at:18.7})],{step:2,align:'center'}),
     B(10,89,80,[I('הגדלים לפי קנה מידה. המרחקים ביניהם אינם לפי קנה מידה.',{size:1,gap:0})],{align:'center'})]},
-  {id:'s05', label:'כמה רחוקים הם באמת?', bg:'s05', segAudio:['l3_s05a','l3_s05b'], shade:'top', motion:'none', noAuto:true, blocks:[
+  {id:'s05', label:'כמה רחוקים הם באמת?', bg:'s05', bgAnim:'games/l3_distance.html?probe=17.8', bgInteractive:true, segAudio:['l3_s05a','l3_s05b'], shade:'top', motion:'none', noAuto:true, blocks:[
     B(10,5,80,[T('כמה רחוקים הם באמת?',{size:3.2}),
       I('אם מהשמש עד כדור הארץ זה צעד אחד...',{size:1.9,gap:.5,at:6.9}),
       G('כמה צעדים עד נפטון?',{size:2.4,gap:.3,at:11.4})],{align:'center',hideFrom:1}),
@@ -504,8 +504,7 @@ const DEFAULTS = [
     B(56,89,40,[I('המחשה',{size:1,gap:0})])]},
   {id:'ch4', label:'פרק ד: עכשיו תורכם', bg:'stars', bgAnim:'games/l3_chapter.html?n=4', audio:'l3_ch4', motion:'none', noAuto:true, blocks:[
     B(53,22,41,[G('פרק ד',{size:2.2,gap:0}), T('עכשיו תורכם',{size:4,gap:.2}), I('מתכננים משימה משלכם לעולם רחוק',{size:2.1,weight:400,gap:.5,at:2.3})])]},
-  {id:'lip', label:'סרטון: החוקרת מצוות תכנון המשימות', bg:'stars', noAuto:true, blocks:[
-    B(15,36,70,[G('סרטון',{size:1.8,gap:0}), T('החוקרת מצוות תכנון המשימות',{size:3.2,gap:.3}), I('(הסרטון ייכנס כאן אחרי ההכנה)',{size:1.5,gap:.8})],{align:'center'})]},
+  {id:'lip', label:'סרטון: החוקרת מצוות תכנון המשימות', bg:'stars', kind:'video', noAuto:true, vimeo:{he:'1235860845'}, big:true, blocks:[]},
   {id:'s12', label:'אתם צוות המשימה', bg:'s12', audio:'l3_s12', shade:'top', noAuto:true, sheet:'missions', blocks:[
     B(10,4,80,[T('אתם צוות המשימה',{size:3.4}), I('עולם אחד • שאלה אחת • אתגר אחד',{size:1.9,gap:.4,seq:[2.8,3.7,5.0]})],{align:'center'}),
     B(10,19,80,[G('מה לגלות? • איזה מידע? • איזו חללית? • איזה מכשיר?',{size:1.9,gap:0,seq:[6.9,9.1,11.0,14.6]}),
@@ -679,6 +678,7 @@ function next(){
     layersEl.querySelectorAll(`.layer[data-step="${reveal}"]`).forEach(d => d.classList.remove('pending'));
     layersEl.querySelectorAll('.layer[data-hide]').forEach(d => { if (reveal >= +d.dataset.hide) d.classList.add('pending'); });
     if (s.stepBg && s.stepBg[reveal]){ const v = document.getElementById('bgvid'); if (v) v.remove(); setBg(s.stepBg[reveal], 'none'); }
+    { const bf = document.getElementById('bgvid'); if (bf && bf.tagName === 'IFRAME' && bf.contentWindow) bf.contentWindow.postMessage({type:'step', n:reveal}, '*'); }
     if (s.segments || s.segAudio) loadNarration(s, reveal);
     return;
   }
@@ -693,9 +693,10 @@ function renderMedia(s){
   media.innerHTML = '';
   const bv = $('#bgvideo'); if (bv) bv.remove(); bgPlayer = null;
   const ov = $('#bgvid'); if (ov) ov.remove();
+  $('#layers').classList.toggle('passthru', !!s.bgInteractive);
   if (s.bgAnim){
     const a = document.createElement('iframe'); a.id = 'bgvid'; a.title = ''; a.setAttribute('aria-hidden','true'); a.setAttribute('tabindex','-1'); a.style.border = '0';
-    a.addEventListener('load', () => a.classList.add('on'), {once:true}); a.src = s.bgAnim; $('#shade').before(a);
+    a.addEventListener('load', () => a.classList.add('on'), {once:true}); a.src = s.bgAnim; if (s.bgInteractive) a.style.pointerEvents = 'auto'; a.addEventListener('load', () => { try { a.contentWindow.postMessage({type:'step', n:reveal}, '*'); } catch(e){} }, {once:true}); $('#shade').before(a);
   }
   if (s.bgVideo){
     const v = document.createElement('video'); v.id = 'bgvid'; v.muted = true; v.loop = !s.opening; v.playsInline = true; v.autoplay = !s.opening;
