@@ -259,7 +259,9 @@ function chapterD(){
 }
 
 /* ---------- the lesson route: four stations on the right ---------- */
-const CH = [{n:'א', t:'מכירים את השכונה'}, {n:'ב', t:'כמה גדול, כמה רחוק, כמה מהר'}, {n:'ג', t:'איך חוקרים עולם רחוק'}, {n:'ד', t:'עכשיו תורכם'}];
+const CH_SETS = {l3:[{n:'א', t:'מכירים את השכונה'}, {n:'ב', t:'כמה גדול, כמה רחוק, כמה מהר'}],
+  l4:[{n:'א', t:'איך חוקרים עולם רחוק'}, {n:'ב', t:'סיפורי גילוי'}, {n:'ג', t:'עכשיו תורכם'}]};
+const CH = CH_SETS[new URLSearchParams(location.search).get('set') || 'l3'] || CH_SETS.l3;
 const route = document.getElementById('route'), POS = [0, 1/3, 2/3, 1];
 CH.forEach((c,i) => {
   const d = document.createElement('div'); d.className = 'st' + (i < cur ? ' past' : i === cur ? ' now' : '');
