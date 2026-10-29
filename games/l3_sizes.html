@@ -1,0 +1,28 @@
+<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>שמות כוכבי הלכת</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@500;700&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:transparent;font-family:Heebo,system-ui,sans-serif}
+.nm{position:fixed;transform:translate(-50%,-100%);background:rgba(6,12,28,.86);border:1px solid rgba(216,180,106,.7);border-radius:999px;padding:4px 16px;
+  color:#ffe2a6;font-weight:700;font-size:max(16px,1.5vw);white-space:nowrap;opacity:0;transition:opacity .35s;pointer-events:none}
+.nm.on{opacity:1}
+.hit{position:fixed;border-radius:50%;transform:translate(-50%,-50%);cursor:pointer}
+</style></head><body>
+<script>
+/* planet centres and radii measured in the 1920x1080 background image (s04) */
+const P=[['כוכב חמה',93,540,6],['נוגה',152,540,16],['כדור הארץ',225,540,17],['מאדים',288,540,9],['צדק',570,540,205],['שבתאי',1125,540,170],['אורנוס',1560,540,74],['נפטון',1758,540,72]];
+const TH=(new URLSearchParams(location.search).get('t')||'').split(',').filter(Boolean).map(Number);
+let W,H,S,OX,OY,step=0,hover=-1,said=-1;
+const tags=P.map(p=>{const d=document.createElement('div');d.className='nm';d.textContent=p[0];document.body.appendChild(d);return d;});
+const hits=P.map((p,i)=>{const d=document.createElement('div');d.className='hit';d.onmouseenter=()=>{hover=i;paint();};d.onmouseleave=()=>{hover=-1;paint();};document.body.appendChild(d);return d;});
+function layout(){W=innerWidth;H=innerHeight;S=Math.max(W/1920,H/1080);OX=(W-1920*S)/2;OY=(H-1080*S)/2;
+  P.forEach((p,i)=>{const x=OX+p[1]*S,y=OY+p[2]*S,r=Math.max(p[3]*S,22);
+    const hw=tags[i].offsetWidth/2+6,below=(i===1||i===3);tags[i].style.left=Math.min(W-hw,Math.max(hw,x))+'px';tags[i].style.transform=below?'translate(-50%,0)':'translate(-50%,-100%)';tags[i].style.top=(below?y+Math.max(p[3]*S,10)+12:y-Math.max(p[3]*S,10)-12-(i===0?tags[i].offsetHeight+8:0))+'px';
+    Object.assign(hits[i].style,{left:x+'px',top:y+'px',width:2*r+'px',height:2*r+'px'});});}
+function paint(){tags.forEach((t,i)=>t.classList.toggle('on',i===hover||i<=said));}
+addEventListener('resize',layout);
+addEventListener('message',e=>{const m=e.data||{};
+  if(m.type==='step'){step=+m.n||0;said=-1;paint();}
+  if(m.type==='time'&&step===0&&m.t<1e8){const end=TH[TH.length-1]+4;let s=-1;TH.forEach((v,i)=>{if(m.t>=v&&m.t<end)s=i;});if(s!==said){said=s;paint();}}});
+layout();
+</script></body></html>

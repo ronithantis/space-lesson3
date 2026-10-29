@@ -39,11 +39,11 @@ function layout(){size();
   if(step===1){place(sun,40,540,.9,1);place(pl,700,560,1,1);const [a,b]=P(420,552),[c,d]=P(625,560);ray.style.left=a+'px';ray.style.top=b+'px';ray.style.width=Math.hypot(c-a,d-b)+'px';ray.style.transform=`rotate(${Math.atan2(d-b,c-a)}rad)`;ray.style.opacity=1;twinkle=1;}
   if(step>=2){place(sun,500,540,1.18,1);place(pl,900,540,.6,0);ray.style.opacity=0;twinkle=0;}}
 function frame(t){stars(t);dc.width=W*devicePixelRatio;dc.height=H*devicePixelRatio;dx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
-  if(step>=2){/* 109 Earths side by side across the Sun's diameter */const R=380*1.18*S,[cx0,cy0]=P(500,540),n=109,d=2*R/n,k=Math.min(n,Math.floor((t-dotsT0)/26));
+  if(step>=2){/* 109 Earths side by side across the Sun's diameter */const rc=sun.getBoundingClientRect(),R=rc.width/2,cx0=rc.left+R,cy0=rc.top+rc.height/2,n=109,d=2*R/n,k=Math.min(n,Math.floor((t-dotsT0)/26));
     for(let i=0;i<k;i++){const x=cx0-R+d*(i+.5);dx.fillStyle='#4f93e6';dx.beginPath();dx.arc(x,cy0,d*.46,0,6.283);dx.fill();dx.strokeStyle='rgba(255,255,255,.75)';dx.lineWidth=.6;dx.stroke();}}
   requestAnimationFrame(frame);}
 addEventListener('resize',layout);
-addEventListener('message',e=>{if(e.data&&e.data.type==='step'){const n=+e.data.n||0;if(n>=2&&step<2)dotsT0=performance.now()+1400;step=n;layout();}});
+addEventListener('message',e=>{if(e.data&&e.data.type==='step'){const n=+e.data.n||0;if(n>=2&&step<2)dotsT0=performance.now()+1700;step=n;layout();}});
 layout();requestAnimationFrame(frame);
 
 </script></body></html>

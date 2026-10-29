@@ -410,13 +410,13 @@ const DEFAULTS = [
       I('ויש עוד הרבה תושבים בשכונה...',{size:1.7,gap:.4,at:12.99})],{align:'center'}),
     B(15,78,70,[G('כדור הארץ: כוכב הלכת השלישי מהשמש',{size:2,gap:0,at:9.48})],{align:'center'}),
     B(15,89,70,[I('המרחקים וגודל כוכבי הלכת אינם לפי קנה מידה.',{size:1,gap:0})],{align:'center'})]},
-  {id:'family', label:'עוד תושבים בשכונה', bg:'s11', bgVideo:'video/l3_s11_comet.mp4', audio:'l3_family', shade:'right', noAuto:true, blocks:[
+  {id:'family', label:'עוד תושבים בשכונה', bg:'stars', bgAnim:'games/l3_family.html?t=0,9.58,22.1,28.92', audio:'l3_family', shade:'right', motion:'none', noAuto:true, blocks:[
     B(56,6,40,[T('עוד תושבים בשכונה',{size:3.2}),
       G('ירח',{size:2,gap:.6,at:0.45}), I('מקיף כוכב לכת. לכדור הארץ: 1. לאחרים: עשרות ואפילו מאות.',{size:1.6,gap:.1,at:0.45}),
       G('כוכב לכת ננסי',{size:2,gap:.6,at:9.58}), I('עולם עגול שמקיף את השמש, אבל קטן מכדי לפנות את המסלול שלו. למשל: פלוטו',{size:1.6,gap:.1,at:9.58}),
       G('אסטרואידים',{size:2,gap:.6,at:22.1}), I('גושי סלע ומתכת. רובם בחגורה שבין מאדים לצדק',{size:1.6,gap:.1,at:22.1}),
       G('שביטים',{size:2,gap:.6,at:28.92}), I('קרח ואבק מקצה מערכת השמש. ליד השמש נוצר להם זנב זוהר',{size:1.6,gap:.1,at:28.92})]),
-    B(56,92,40,[I('המחשה',{size:1,gap:0})])]},
+    B(56,92,40,[I('הגדלים אינם לפי קנה מידה.',{size:1,gap:0})])]},
   {id:'tour', label:'סיור בכוכבי הלכת', bg:'stars', bgAnim:'games/l3_tour.html', segAudio:['l3_tour0','l3_tour1','l3_tour2','l3_tour3','l3_tour4','l3_tour5','l3_tour6','l3_tour7','l3_tour8'], shade:'right', motion:'none', noAuto:true, blocks:[
     B(56,10,40,[T('סיור בכוכבי הלכת',{size:3.4}), I('מהקרוב ביותר לשמש ועד הרחוק ביותר',{size:2,gap:.5,at:2.56})],{hideFrom:1}),
     B(56,10,40,[G('כוכב הלכת 1 מהשמש',{size:1.6,gap:0}), T('כוכב חמה',{size:3.6,gap:.1}), I('הקרוב ביותר לשמש והקטן ביותר',{size:1.8,gap:0.6,at:1.56}), I('סלעי ומלא מכתשים',{size:1.8,gap:0.3,at:5.36}), I('כמעט בלי אוויר: חם מאוד ביום, קר מאוד בלילה',{size:1.8,gap:0.3,at:8.73}), G('אין ירחים',{size:2,gap:.8,at:14.88})],{step:1,hideFrom:2}),
@@ -447,7 +447,7 @@ const DEFAULTS = [
     B(34,80,16,[G('כדור הארץ',{size:1.6,gap:0}), I('1',{size:1.3,gap:.1})],{align:'center'}),
     B(50,80,16,[G('נפטון',{size:1.6,gap:0}), I('כמעט פי 4',{size:1.3,gap:.1})],{align:'center'}),
     B(2,4,64,[I('קוטר כוכב הלכת לעומת כדור הארץ · התמונות אינן לפי קנה מידה',{size:1.2,gap:0})],{align:'center'})]},
-  {id:'s04', label:'שמונה כוכבי לכת, לא שמונה עולמות זהים', bg:'s04', segAudio:['l3_s04a','l3_s04b','l3_s04c','l3_s04d'], shade:'top', motion:'none', noAuto:true, blocks:[
+  {id:'s04', label:'שמונה כוכבי לכת, לא שמונה עולמות זהים', bg:'s04', bgAnim:'games/l3_sizes.html?t=6.41,8.11,8.31,9.92,10.12,10.47,11.93,12.59', bgInteractive:true, segAudio:['l3_s04a','l3_s04b','l3_s04c','l3_s04d'], shade:'top', motion:'none', noAuto:true, blocks:[
     B(10,4,80,[G('בדקו את המיון שלכם',{size:1.8,gap:0}), T('שמונה כוכבי לכת, לא שמונה עולמות זהים',{size:2.8,gap:.2,at:2.47}),
       I('הפעם הגדלים נכונים: הקוטר של צדק גדול פי 11 מזה של כדור הארץ.',{size:1.7,gap:.4,at:13.47}),
       I('הקטן ביותר: כוכב חמה • נפטון קטן רק קצת מאורנוס',{size:1.6,gap:.3,at:21.16})],{align:'center',hideFrom:1}),
@@ -735,7 +735,7 @@ const audio = new Audio(); let advTimer = null;
 const narr = $('#narr'), narrIcon = $('#narrIcon');
 const ICON_PLAY = '<path d="M7 4.5v11l9-5.5z"/>', ICON_PAUSE = '<path d="M7 4.5v11M13 4.5v11"/>';
 let kinetic = false, loadSeq = 0;
-function revealAllTokens(){ kinetic = false; layersEl.querySelectorAll('.wait').forEach(x => { if (!x.classList.contains('pop')) x.classList.remove('wait'); }); }
+function revealAllTokens(){ postAnim({type:'time', t:1e9}); kinetic = false; layersEl.querySelectorAll('.wait').forEach(x => { if (!x.classList.contains('pop')) x.classList.remove('wait'); }); }
 function armKinetic(){ kinetic = true; cueDone = {}; layersEl.querySelectorAll('[data-t]').forEach(x => { const L = x.closest('.layer'); if (+(L && L.dataset.step || 0) === reveal) x.classList.add('wait'); }); }
 let cueDone = {};
 function runCues(t){ const s = STEPS[cur]; if (!s.cues || reveal) return; s.cues.forEach((c,k) => { if (!cueDone[k] && t >= c.t){ cueDone[k] = true; const v = document.getElementById('bgvid'); if (v) v.remove(); setBg(c.bg, 'none'); } }); }
@@ -763,7 +763,8 @@ function syncOpening(play){ const s = STEPS[cur], v = document.getElementById('b
   if (play){ if (Math.abs(v.currentTime - audio.currentTime) > .3) v.currentTime = Math.min(audio.currentTime, (v.duration||1e9) - .05); v.play().catch(()=>{}); } else v.pause(); }
 audio.addEventListener('seeked', () => syncOpening(!audio.paused));
 audio.addEventListener('pause', () => { narrIcon.innerHTML = ICON_PLAY; syncOpening(false); });
-audio.addEventListener('timeupdate', () => { if (audio.duration) $('#narrFill').style.width = (audio.currentTime/audio.duration*100)+'%'; tickKinetic(); });
+function postAnim(m){ const bf = document.getElementById('bgvid'); if (bf && bf.tagName === 'IFRAME' && bf.contentWindow) bf.contentWindow.postMessage(m, '*'); }
+audio.addEventListener('timeupdate', () => { if (audio.duration) $('#narrFill').style.width = (audio.currentTime/audio.duration*100)+'%'; tickKinetic(); postAnim({type:'time', t:audio.currentTime}); });
 audio.addEventListener('ended', () => {
   const s = STEPS[cur]; revealAllTokens();
   narrDone();

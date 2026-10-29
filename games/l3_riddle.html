@@ -16,7 +16,8 @@ button{font-family:inherit;cursor:pointer}
 #next{font-size:1.75cqw;font-weight:700;color:#1a1206;background:#f2c46b;border:0;border-radius:99px;padding:.7cqw 2.2cqw}
 #next:hover{background:#ffd88a}
 #prev{font-size:1.5cqw;color:#cfd8e8;background:transparent;border:1px solid rgba(207,216,232,.4);border-radius:99px;padding:.6cqw 1.8cqw}
-#prev[hidden],#next[hidden]{display:none}
+#prev[hidden],#next[hidden],#say[hidden]{display:none}
+#say{font-size:1.5cqw;color:#cfd8e8;background:transparent;border:1px solid rgba(207,216,232,.4);border-radius:99px;padding:.6cqw 1.8cqw;margin-inline-start:auto}
 #guess{display:flex;gap:1.4cqw;margin-top:1.6cqw}
 #guess[hidden]{display:none}
 #guess button{font-size:2.1cqw;font-weight:700;color:#eef2f8;background:rgba(255,255,255,.08);border:2px solid rgba(242,196,107,.7);border-radius:1.2cqw;padding:.8cqw 3cqw}
@@ -37,7 +38,7 @@ button{font-family:inherit;cursor:pointer}
     <div id="verdict" hidden></div>
     <h2 id="title"></h2><p id="body"></p>
     <div id="guess" hidden><button data-g="v">נוגה</button><button data-g="m">כוכב חמה</button></div>
-    <div id="nav"><button id="next"></button><button id="prev">הקודם</button></div>
+    <div id="nav"><button id="next"></button><button id="prev">הקודם</button><button id="say" hidden>השמעה</button></div>
   </div>
 </div>
 <script>
@@ -53,7 +54,7 @@ function show(i){
     back.style.backgroundImage = `url(${IMG[f.img]})`; back.classList.remove('on'); void back.offsetWidth; back.classList.add('on'); front.classList.remove('on');
     [front, back] = [back, front];
   }
-  cur = i;
+  cur = i; speak();
   $('#title').textContent = f.title; $('#title').className = f.tone; $('#body').textContent = f.body;
   $('#guess').hidden = !f.guess; $('#next').hidden = !!f.guess; $('#next').textContent = f.next || '';
   $('#prev').hidden = i === 0;
@@ -61,10 +62,14 @@ function show(i){
   if (choice) v.textContent = choice === 'v' ? 'ניחשתם נכון!' : 'מפתיע, נכון?';
   [...$('#dots').children].forEach((d, k) => d.classList.toggle('on', k <= i));
 }
-const close = () => { try { parent.postMessage({type:'riddle-close'}, '*'); } catch(e){} };
+/* narration: audio/l3_rd1_he.mp3 ... l3_rd10_he.mp3; the button appears only when the clip exists */
+const AU = new Audio();
+function speak(){ AU.pause(); $('#say').hidden = true; AU.src = `../audio/l3_rd${cur+1}_he.mp3`; AU.oncanplay = () => { $('#say').hidden = false; }; AU.play().catch(() => {}); }
+const close = () => { AU.pause(); try { parent.postMessage({type:'riddle-close'}, '*'); } catch(e){} };
 $('#next').onclick = () => cur === F.length - 1 ? close() : show(cur + 1);
 $('#prev').onclick = () => show(cur - 1);
 $('#close').onclick = close;
+$('#say').onclick = () => { AU.currentTime = 0; AU.play().catch(() => {}); };
 document.querySelectorAll('#guess button').forEach(b => b.onclick = () => { choice = b.dataset.g; show(cur + 1); });
 addEventListener('keydown', e => {
   if (e.key === 'Escape') close();

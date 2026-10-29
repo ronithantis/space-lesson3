@@ -70,7 +70,7 @@ function showTip(tip, i, lift){
   const [x, y] = map(px(P[i].au), IMG.y);
   tip.querySelector('b').textContent = P[i].n; tip.querySelector('.a').textContent = fmt(P[i].au);
   const b = tip.querySelector('.b'); if (b) b.textContent = P[i].km;
-  tip.style.left = Math.min(W - 90, Math.max(90, x)) + 'px'; tip.style.top = (y - lift*S) + 'px'; tip.classList.add('on');
+  const hw = tip.offsetWidth/2 + 14; tip.style.left = Math.min(W - hw, Math.max(hw, x)) + 'px'; tip.style.top = (y - lift*S) + 'px'; tip.classList.add('on');
 }
 addEventListener('mousemove', e => {
   const [, y] = map(0, IMG.y); let best = -1, bd = 1e9;
@@ -100,7 +100,7 @@ function layout(){
   const xp = map(px(tapeAU), 0)[0]; ptr.setAttribute('d', `M ${xp} ${y-9} l -7 -12 l 14 0 z`);
   if (probeAU !== null){ const [qx, qy] = map(px(probeAU), IMG.y - 70); probe.setAttribute('transform', `translate(${qx} ${qy}) scale(${Math.max(1.1, S*1.6)})`);
     const [ex] = map(px(1), 0); trail.setAttribute('x1', ex); trail.setAttribute('x2', qx); trail.setAttribute('y1', qy); trail.setAttribute('y2', qy);
-    yr.style.left = qx + 'px'; yr.style.top = (qy - 28*S) + 'px'; }
+    { const hw = yr.offsetWidth/2 + 14; yr.style.left = Math.min(W - hw, Math.max(hw, qx)) + 'px'; } yr.style.top = (qy - 28*S) + 'px'; }
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 function glide(a, b, ms, onStep){ return new Promise(res => { const t0 = performance.now();
@@ -123,7 +123,7 @@ async function runProbe(){
   const legs = [[1, 0], [5.2, 1.9], [9.54, 4], [19.2, 8.4], [30.1, 12]];
   const names = ['', 'צדק', 'שבתאי', 'אורנוס', 'נפטון'];
   const show = (y, sub) => { const n = y === 0 ? '0' : (Number.isInteger(y) ? String(y) : y.toFixed(1).replace('.0', ''));
-    yr.innerHTML = `${n}<small>${sub}</small>`; };
+    yr.innerHTML = `${n}<small>${sub}</small>`; layout(); };
   probeAU = 1; layout(); probe.animate([{opacity:0},{opacity:1}], {duration:600, fill:'forwards'}); trail.setAttribute('opacity', 1);
   show(0, 'שנים בדרך · יוצאים לדרך'); yr.style.opacity = 1; layout();
   await sleep(1600);
